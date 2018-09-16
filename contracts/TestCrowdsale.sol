@@ -386,6 +386,172 @@ contract ArtX{
             return (75000000000000); // init
     }
 
+
+    /**
+     * @dev this is the core logic for any buy/reload that happens while a round
+     * is live.
+     */
+
+    function coreNew(address _addr, uint256 _eth, address _affID) //, ArtXdatasets.EventReturns memory _eventData_)
+    public
+    returns(uint256)
+    {
+
+        ArtXdatasets.EventReturns memory _eventData_;
+
+        // early round eth limiter)
+
+        if (eth_ < 100000000000000000000 && plyrs_[_addr].eth.add(_eth) > 1000000000000000000){   
+            plyrs_[_addr].eth = 1000000000000000000;
+
+            uint256 _availableLimit = (1000000000000000000).sub(plyrs_[_addr].eth);
+            uint256 _refund = _eth.sub(_availableLimit);
+            plyrs_[_addr].gen = plyrs_[_addr].gen.add(_refund);
+            _eth = _availableLimit;
+
+            return(_availableLimit);
+
+        }
+
+        // if eth left is greater than min eth allowed (sorry no pocket lint)
+        if (_eth > 1000000000)
+        {
+
+            // mint the new keys
+            uint256 _keys = (eth_).keysRec(_eth);
+
+            // if they bought at least 1 whole key
+            if (_keys >= 1000000000000000000)
+            {
+                accDelay_ = accDelay_.add(delay_);
+
+                // set the new leader bool to true
+                _eventData_.compressedData = _eventData_.compressedData + 100;
+            }
+
+            // update player
+            plyrs_[_addr].keys = _keys.add(plyrs_[_addr].keys);
+            plyrs_[_addr].eth = _eth.add(plyrs_[_addr].eth);
+
+            // update global
+            keys_ = _keys.add(keys_);
+            totalBalance_ = _eth.add(totalBalance_);
+
+            // distribute eth
+            _eventData_ = distributeExternalNew(_addr, _eth, _affID, _eventData_);
+            _eventData_ = distributeInternalNew(_addr, _eth, _keys, _eventData_);
+
+            // call end tx function to fire end tx event.
+            //endTxNew(_addr, _eth, _keys, _eventData_);
+        }
+    }
+
+    /**
+     * @dev distributes eth based on fees to com, aff, and p3d
+     */
+    function distributeExternalNew(address _addr, uint256 _eth, address _affID, ArtXdatasets.EventReturns memory _eventData_)
+    private
+    returns(ArtXdatasets.EventReturns)
+    {
+
+        // distribute share to affiliate
+        uint256 _aff = _eth / 10;
+
+        // decide what to do with affiliate share of fees
+        // affiliate must not be self, and must have a name registered
+        if (_affID != _addr && plyrs_[_affID].addr != address(0)) {
+            plyrs_[_affID].aff = _aff.add(plyrs_[_affID].aff);
+            plyrs_[_addr].aff = _aff.add(plyrs_[_addr].aff);
+
+            // TODO
+            // emit Devents.onAffiliatePayout(_affID, plyrs_[_affID].name, _aff, now);
+            // TODO : change the format of events
+        } else {
+
+            // put it to pot_ if no refer information provided
+            pot_ = pot_.add(_aff.mul(2));
+        }
+
+        // distribute gen share (thats what updateMasks() does) and adjust
+        // balances for dust.
+        //        uint256 _dust = updateMasksXAddr(_addr, _gen, _keys);
+        //        if (_dust > 0)
+        //            _gen = _gen.sub(_dust);
+
+        return(_eventData_);
+    }
+
+    /**
+     * @dev distributes eth based on fees to gen and pot
+     */
+    function distributeInternalNew(address _addr, uint256 _eth, uint256 _keys, ArtXdatasets.EventReturns memory _eventData_)
+    private
+    returns(ArtXdatasets.EventReturns)
+    {
+
+        uint256 _now = now;
+        uint256 T = _now - startTime_;
+        uint256 D;
+        if(accDelay_ == 0) {
+            D = 0; // now is larger than time of purchasing
+        }else{
+            D = (accDelay_.sub(now.sub(_now)))/2;
+        }
+
+        // calculate pot
+        uint256 _pot = _eth .mul(((((((60).mul(1000000000000000000)).mul((T).add(1)))/(((T).add(D)).add(1))).add(10)) / 100 ));
+        uint256 _gen = _eth .mul(((80).sub((((((60).mul(1000000000000000000)).mul((T).add(1)))/(((T).add(D)).add(1))).add(10))) / 100 ));
+
+        _eth = _eth.sub(_pot);
+
+        // distribute gen share (thats what updateMasks() does) and adjust
+        // balances for dust.
+        uint256 _dust = updateMasksXAddr(_addr, _gen, _keys);
+        if (_dust > 0)
+            _eth = _eth.sub(_dust);
+
+        // add eth to pot
+        pot_ = _pot.add(_dust.add(pot_));
+
+        // set up event data
+        _eventData_.potAmount = _pot;
+
+        return(_eventData_);
+    }
+
+    /**
+     * @dev updates masks for round and player when keys are bought
+     * @return dust left over
+     */
+    function updateMasksXAddr(address _addr, uint256 _gen, uint256 _keys)
+    private
+    returns(uint256)
+    {
+        /* MASKING NOTES
+            earnings masks are a tricky thing for people to wrap their minds around.
+            the basic thing to understand here.  is were going to have a global
+            tracker based on profit per share for each round, that increases in
+            relevant proportion to the increase in share supply.
+
+            the player will have an additional mask that basically says "based
+            on the rounds mask, my shares, and how much i've already withdrawn,
+            how much is still owed to me?"
+        */
+
+        // calc profit per key & round mask based on this buy:  (dust goes to pot)
+        uint256 _ppt = (_gen.mul(1000000000000000000) / keys_);
+        mask_ = _ppt.add(mask_);
+
+        // calculate player earning from their own buy (only based on the keys
+        // they just bought).  & update player earnings mask
+        uint256 _pearn = (_ppt.mul(_keys)) / (1000000000000000000);
+        plyrs_[_addr].mask = (((mask_.mul(_keys)) / (1000000000000000000)).sub(_pearn)).add(plyrs_[_addr].mask);
+
+        // calculate & return dust
+        return(_gen.sub((_ppt.mul(keys_)) / (1000000000000000000)));
+    }
+
+
     //==============================================================================
     //     _ _ | _   | _ _|_ _  _ _  .
     //    (_(_||(_|_||(_| | (_)| _\  .
@@ -460,7 +626,7 @@ contract ArtX{
         for(uint256 i = 0; i < addressIndexes.length; i++) {
             uint256 priceDiff_;
             address playerAddr_ = addressIndexes[i];
-            Ddatasets.Player memory player_ = plyrs_[playerAddr_];
+            ArtXdatasets.Player memory player_ = plyrs_[playerAddr_];
 
             for(uint j=0;j<player_.est.length;j++){
 
@@ -479,7 +645,7 @@ contract ArtX{
                     if(priceDiff_==winnerGroup3_.price){
                         winnerGroup3_.addr.push(player_.addr);
                     }else if(priceDiff_>winnerGroup3_.price){
-                        //                        Ddatasets.WinnerGroup tempGroup_;
+                        //                        ArtXdatasets.WinnerGroup tempGroup_;
                         //                        tempGroup_.addr.push(player_.addr);
                         //                        tempGroup_.price = priceDiff_;
                         // not sure about object copy
@@ -497,7 +663,7 @@ contract ArtX{
                     if(priceDiff_==winnerGroup3_.price){
                         winnerGroup3_.addr.push(player_.addr);
                     }else if(priceDiff_>winnerGroup3_.price){
-                        //                        Ddatasets.WinnerGroup tempGroup_;
+                        //                        ArtXdatasets.WinnerGroup tempGroup_;
                         //                        tempGroup_.addr.push(player_.addr);
                         //                        tempGroup_.price = priceDiff_;
                         winnerGroup2_.addr = winnerGroup3_.addr;
@@ -506,7 +672,7 @@ contract ArtX{
                         winnerGroup3_.addr.push(player_.addr);
                         winnerGroup3_.price = priceDiff_;
                     }else if(priceDiff_<winnerGroup3_.price && priceDiff_>winnerGroup2_.price){
-                        //                        Ddatasets.WinnerGroup tempGroup_;
+                        //                        ArtXdatasets.WinnerGroup tempGroup_;
                         //                        tempGroup_.addr.push(player_.addr);
                         //                        tempGroup_.price = priceDiff_;
                         winnerGroup1_.addr = winnerGroup2_.addr;
@@ -550,68 +716,40 @@ contract ArtX{
             }
         }
 
-        return (selectAddress());
+        //return (selectAddress());
+        return(winnerGroup1_.addr);
+    }
 
+
+    /**
+     * @dev returns current eth price for X keys.
+     * -functionhash- 0xcf808000
+     * @param _keys number of keys desired (in 18 decimal format)
+     * @return amount of eth needed to send
+     */
+    function iWantXKeysNew(uint256 _keys)
+    public
+    view
+    returns(uint256)
+    {
+
+        // grab time
+        uint256 _now = now;
+
+        uint256 _ethDec = calculateEndEth(_now);
+        uint256 _ethInc = totalBalance_;
+
+        // are we in a round?
+        if (end_ == false && _ethDec > _ethInc)
+            return ( (keys_.add(_keys)).ethRec(_keys) );
+        else // rounds over.  need price for new round
+            return ( (_keys).eth() );
     }
 
 
     /*************************************************************************************************************************/
     /**************************************** Core Function Testing **********************************************************/
     /*************************************************************************************************************************/
-
-    /**
-    * @Test and Evaluation of core business
-    */
-
-    //function core(uint256 _pID, uint256 _eth, uint256 _affID, uint256 _appraisal, ArtXdatasets.EventReturns memory _eventData_)
-    //    public
-    //    {
-    //    // if player is new to round
-    //    if (PR.shares == 0)
-    //        _eventData_ = managePlayer(_pID, _eventData_);
-        
-    //    // early round eth limiter 
-    //    if (round_.eth < 100000000000000000000 && PR.eth.add(_eth) > 1000000000000000000)
-    //    {
-    //        uint256 _availableLimit = (1000000000000000000).sub(PR.eth);
-    //        uint256 _refund = _eth.sub(_availableLimit);
-    //        plyr_.gen = plyr_.gen.add(_refund);
-    //        _eth = _availableLimit;
-    //    }
-        
-        // if eth left is greater than min eth allowed (sorry no pocket lint)
-    //    if (_eth > 1000000000) 
-    //    {
-            
-            // mint the new artxshares
-    //        uint256 _artxshares = (round_.eth).artxsharesRec(_eth);
-            
-            // if they bought at least 1 whole key
-    //        if (_artxshares >= 1000000000000000000)
-    //        {
-    //        updateTimer(_artxshares);
-           
-            // set the new leader bool to true
-    //        _eventData_.compressedData = _eventData_.compressedData + 100;
-
-    //        }
-    //    }
-              
-            // update player 
-    //        plyr_.artxshares = _artxshares.add(plyr_.artxshares);
-    //        plyr_.eth = _eth.add(plyr_.eth);
-            
-            // update round
-    //        round_.artxshares = _artxshares.add(round_.artxshares);
-    //        round_.eth = _eth.add(round_.eth);
-    
-            // distribute eth
-    //        _eventData_ = distributeshares(_pID, _eth, _artxshares, _eventData_);
-            
-            // call end tx function to fire end tx event.
-    //        endTx(_pID, _eth, _artxshares, _eventData_);
-    //}
-
 
     /**
      * @dev updates round timer based on number of whole artxshares bought.
@@ -795,57 +933,57 @@ contract ArtX{
 library ArtxsharesCalcLong {
     using SafeMath for *;
     /**
-     * @dev calculates number of artxshares received given X eth 
-     * @param _curEth current amount of eth in contract 
+     * @dev calculates number of keys received given X eth
+     * @param _curEth current amount of eth in contract
      * @param _newEth eth being spent
      * @return amount of ticket purchased
      */
-    function artxsharesRec(uint256 _curEth, uint256 _newEth)
-        internal
-        pure
-        returns (uint256)
+    function keysRec(uint256 _curEth, uint256 _newEth)
+    internal
+    pure
+    returns (uint256)
     {
-        return(artxshares((_curEth).add(_newEth)).sub(artxshares(_curEth)));
-    }
-    
-    /**
-     * @dev calculates amount of eth received if you sold X artxshares 
-     * @param _curartxshares current amount of artxshares that exist 
-     * @param _sellartxshares amount of artxshares you wish to sell
-     * @return amount of eth received
-     */
-    function ethRec(uint256 _curartxshares, uint256 _sellartxshares)
-        internal
-        pure
-        returns (uint256)
-    {
-        return((eth(_curartxshares)).sub(eth(_curartxshares.sub(_sellartxshares))));
+        return(keys((_curEth).add(_newEth)).sub(keys(_curEth)));
     }
 
     /**
-     * @dev calculates how many artxshares would exist with given an amount of eth
-     * @param _eth eth "in contract"
-     * @return number of artxshares that would exist
+     * @dev calculates amount of eth received if you sold X keys
+     * @param _curKeys current amount of keys that exist
+     * @param _sellKeys amount of keys you wish to sell
+     * @return amount of eth received
      */
-    function artxshares(uint256 _eth) 
-        internal
-        pure
-        returns(uint256)
+    function ethRec(uint256 _curKeys, uint256 _sellKeys)
+    internal
+    pure
+    returns (uint256)
     {
-        return ((((((_eth).mul(1000000000000000000)).mul(312500000000000000000000000)).add(5624988281256103515625000000000000000000000000000000000000000000)).sq()).sub(74999921875000000000000000000000)) / (156250000);
+        return((eth(_curKeys)).sub(eth(_curKeys.sub(_sellKeys))));
     }
-    
+
     /**
-     * @dev calculates how much eth would be in contract given a number of artxshares
-     * @param _artxshares number of artxshares "in contract" 
+     * @dev calculates how many keys would exist with given an amount of eth
+     * @param _eth eth "in contract"
+     * @return number of keys that would exist
+     */
+    function keys(uint256 _eth)
+    internal
+    pure
+    returns(uint256)
+    {
+        return ((((((_eth).mul(1000000000000000000)).mul(312500000000000000000000000)).add(5624988281256103515625000000000000000000000000000000000000000000)).sqrt()).sub(74999921875000000000000000000000)) / (156250000);
+    }
+
+    /**
+     * @dev calculates how much eth would be in contract given a number of keys
+     * @param _keys number of keys "in contract"
      * @return eth that would exists
      */
-    function eth(uint256 _artxshares) 
-        internal
-        pure
-        returns(uint256)  
+    function eth(uint256 _keys)
+    internal
+    pure
+    returns(uint256)
     {
-        return ((78125000).mul(_artxshares.sq()).add(((149999843750000).mul(_artxshares.mul(1000000000000000000))) / (2))) / ((1000000000000000000).sq());
+        return ((78125000).mul(_keys.sq()).add(((149999843750000).mul(_keys.mul(1000000000000000000))) / (2))) / ((1000000000000000000).sq());
     }
 }
 

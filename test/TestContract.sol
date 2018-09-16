@@ -7,7 +7,7 @@ import "../contracts/TestCrowdsale.sol";
 contract TestContract {
     
     ArtX artx;
-    
+
     function beforeEach() public {
         artx = new ArtX();
     }
@@ -33,7 +33,7 @@ contract TestContract {
 
     function testallocation() public{
         uint256 allocation = artx.calculateAllocation();
-        Assert.equal(allocation, 1270, "should equal input");
+        Assert.equal(allocation, 1269, "should equal input");
         //test_value(allocation);
     }
 
@@ -93,6 +93,17 @@ contract TestContract {
           uint256 testcalculateEndEth = artx.calculateEndEth(3000);
           Assert.equal(1000000000000000000000000, testcalculateEndEth, "should equal input");
     }
+
+    function testiWantXKeys() public{
+        uint256 iWantXKeysNew = artx.iWantXKeysNew(10000000000000000000);
+        Assert.equal(750007031250000, iWantXKeysNew, "should equal input");
+    }
+
+
+    function testcoreNew() public{
+        uint available_limit = artx.coreNew(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 100000000000, 0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3);
+        Assert.equal(0, available_limit, "should equal input");
+    }    
 
 
 }

@@ -627,7 +627,7 @@ contract Decentralism is modularLong {
      * @dev this is the core logic for any buy/reload that happens while a round
      * is live.
      */
-    function coreNew(address _addr, uint256 _eth, address _affID, Ddatasets.EventReturns memory _eventData_)
+    function coreNew(address _addr, uint256 _eth, address _affID)//, Ddatasets.EventReturns memory _eventData_)
     private
     {
 
@@ -1008,12 +1008,6 @@ contract Decentralism is modularLong {
             // put it to pot_ if no refer information provided
             pot_ = pot_.add(_aff.mul(2));
         }
-
-        // distribute gen share (thats what updateMasks() does) and adjust
-        // balances for dust.
-        //        uint256 _dust = updateMasksXAddr(_addr, _gen, _keys);
-        //        if (_dust > 0)
-        //            _gen = _gen.sub(_dust);
 
         return(_eventData_);
     }
