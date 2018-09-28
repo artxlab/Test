@@ -109,7 +109,7 @@ contract ArtX{
     uint256 accDelay_ = 0;
     uint256 keys_ = 50;
     uint256 pot_ = 0;
-    uint256 eth_ = 0;
+    uint256 eth_ = 1000000000000000000000000000000000000000000000000000000;
     uint256 com_ = 0;
     address private win_;
     uint256 private totalBalance_;
@@ -520,13 +520,16 @@ contract ArtX{
 
         // calculate pot
         uint256 _pot = _eth .mul(((((((60).mul(1000000000000000000)).mul((T).add(1)))/(((T).add(D)).add(1))).add(10)) / 100 ));
-        uint256 _gen = _eth .mul(((80).sub((((((60).mul(1000000000000000000)).mul((T).add(1)))/(((T).add(D)).add(1))).add(10))) / 100 ));
+        //uint256 _gen = _eth .mul(((80).sub((((((60).mul(1000000000000000000)).mul((T).add(1)))/(((T).add(D)).add(1))).add(10))) / 100 ));
+        uint256 _gen = _eth .mul(80).sub((((((60).mul(1000000000000000000)).mul((T).add(1)))/(((T).add(D)).add(1))).add(10))) / 100;
 
-        _eth = _eth.sub(_pot);
+        //_eth = _eth.sub(_pot);
+        _eth = eth_.sub(_pot);
 
         // distribute gen share (thats what updateMasks() does) and adjust
         // balances for dust.
         uint256 _dust = updateMasksXAddr(_addr, _gen, _keys);
+
         if (_dust > 0)
             _eth = _eth.sub(_dust);
 
@@ -534,10 +537,10 @@ contract ArtX{
         pot_ = _pot.add(_dust.add(pot_));
 
         // set up event data
-        _eventData_.potAmount = _pot;
+        //_eventData_.potAmount = _pot;
 
         //return(_eventData_);
-        return(_pot);
+        return(pot_);
     }
 
     /**
@@ -559,7 +562,7 @@ contract ArtX{
             how much is still owed to me?"
         */
 
-        plyrs_[_addr].mask = 10000;
+        plyrs_[_addr].mask = 100000;
 
         // calc profit per key & round mask based on this buy:  (dust goes to pot)
         uint256 _ppt = (_gen.mul(1000000000000000000) / keys_);
