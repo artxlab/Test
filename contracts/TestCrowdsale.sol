@@ -107,7 +107,7 @@ contract ArtX{
     bool private end_ = false;
     uint256 mask_ = 1000000;
     uint256 accDelay_ = 0;
-    uint256 keys_ = 0;
+    uint256 keys_ = 50;
     uint256 pot_ = 0;
     uint256 eth_ = 0;
     uint256 com_ = 0;
@@ -398,7 +398,6 @@ contract ArtX{
     {
 
         ArtXdatasets.EventReturns memory _eventData_;
-
         // early round eth limiter)
 
         if (eth_ < 100000000000000000000 && plyrs_[_addr].eth.add(_eth) > 1000000000000000000){   
@@ -438,8 +437,8 @@ contract ArtX{
             totalBalance_ = _eth.add(totalBalance_);
 
             // distribute eth
-            _eventData_ = distributeExternalNew(_addr, _eth, _affID, _eventData_);
-            _eventData_ = distributeInternalNew(_addr, _eth, _keys, _eventData_);
+            //_eventData_ = distributeExternalNew(_addr, _eth, _affID, _eventData_);
+            //_eventData_ = distributeInternalNew(_addr, _eth, _keys, _eventData_);
 
             // call end tx function to fire end tx event.
             //endTxNew(_addr, _eth, _keys, _eventData_);
@@ -447,10 +446,28 @@ contract ArtX{
     }
 
     /**
+     * @dev prepares compression data and fires event for buy or reload tx's
+     */
+    //function endTxNew(address _addr, uint256 _eth, uint256 _keys, ArtXdatasets.EventReturns memory _eventData_)
+    //public
+    //{
+
+    //    emit Devents.onEndTx
+    //    (
+    //        plyrs_[_addr].name,
+    //        msg.sender,
+    //        _eth,
+    //        _keys,
+    //        _eventData_.potAmount
+    //    );
+    //}
+
+
+    /**
      * @dev distributes eth based on fees to com, aff, and p3d
      */
     function distributeExternalNew(address _addr, uint256 _eth, address _affID, ArtXdatasets.EventReturns memory _eventData_)
-    private
+    public
     returns(ArtXdatasets.EventReturns)
     {
 
@@ -484,10 +501,13 @@ contract ArtX{
     /**
      * @dev distributes eth based on fees to gen and pot
      */
-    function distributeInternalNew(address _addr, uint256 _eth, uint256 _keys, ArtXdatasets.EventReturns memory _eventData_)
-    private
-    returns(ArtXdatasets.EventReturns)
+    function distributeInternalNew(address _addr, uint256 _eth, uint256 _keys) // ,ArtXdatasets.EventReturns memory _eventData_)
+    public
+    //returns(ArtXdatasets.EventReturns)
+    returns(uint256)
     {
+
+        ArtXdatasets.EventReturns memory _eventData_;
 
         uint256 _now = now;
         uint256 T = _now - startTime_;
@@ -516,7 +536,8 @@ contract ArtX{
         // set up event data
         _eventData_.potAmount = _pot;
 
-        return(_eventData_);
+        //return(_eventData_);
+        return(_pot);
     }
 
     /**
@@ -524,7 +545,7 @@ contract ArtX{
      * @return dust left over
      */
     function updateMasksXAddr(address _addr, uint256 _gen, uint256 _keys)
-    private
+    public
     returns(uint256)
     {
         /* MASKING NOTES
@@ -538,6 +559,8 @@ contract ArtX{
             how much is still owed to me?"
         */
 
+        plyrs_[_addr].mask = 10000;
+
         // calc profit per key & round mask based on this buy:  (dust goes to pot)
         uint256 _ppt = (_gen.mul(1000000000000000000) / keys_);
         mask_ = _ppt.add(mask_);
@@ -550,7 +573,6 @@ contract ArtX{
         // calculate & return dust
         return(_gen.sub((_ppt.mul(keys_)) / (1000000000000000000)));
     }
-
 
     //==============================================================================
     //     _ _ | _   | _ _|_ _  _ _  .
@@ -621,7 +643,7 @@ contract ArtX{
 
     // Get at lease three winners
     // So there might be more than three winners
-    function getWinner() internal returns(address[]) {
+    function getWinner() public returns(address[]) {
         uint initiCount_ = 0;
         for(uint256 i = 0; i < addressIndexes.length; i++) {
             uint256 priceDiff_;
@@ -857,35 +879,6 @@ contract ArtX{
         
         //return(_eventData_);
     }
-
-    /**
-     * @dev prepares compression data and fires event for buy or reload tx's
-     */
-    //function endTx(uint256 _pID, uint256 _eth, uint256 _artxshares, ArtXdatasets.EventReturns memory _eventData_)
-    //    private
-    //{
-        //_eventData_.compressedData = _eventData_.compressedData + (now * 1000000000000000000) + (1 * 100000000000000000000000000000);
-        //_eventData_.compressedIDs = _eventData_.compressedIDs + _pID + (1 * 10000000000000000000000000000000000000000000000000000);
-        
-        //emit F3Devents.onEndTx
-        //(
-        //    _eventData_.compressedData,
-        //    _eventData_.compressedIDs,
-        //    plyr_[_pID].name,
-        //    msg.sender,
-        //    _eth,
-        //    _artxshares,
-        //    _eventData_.winnerAddr,
-        //    _eventData_.winnerName,
-        //    _eventData_.amountWon,
-        //    _eventData_.newPot,
-        //    _eventData_.P3DAmount,
-        //    _eventData_.genAmount,
-        //    _eventData_.potAmount,
-        //    airDropPot_
-        //);
-    //}
-
 
     /**
      * @dev updates masks for round and player when artxshares are bought
