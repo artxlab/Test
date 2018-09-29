@@ -101,17 +101,17 @@ contract TestContract {
         Assert.equal(750007031250000, iWantXKeysNew, "should equal input");
     }**/
 
-    function testcoreNew() public{
+    /**function testcoreNew() public{
         uint available_limit = artx.coreNew(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 100000000000, 0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3);
         Assert.equal(0, available_limit, "should equal input");
-    }   
+    }**/ 
 
     /************************************ Test Portion 2 ***********************************************/
 
     /**function testdistinternal() public{
         uint256 pot = artx.distributeInternalNew(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 1000000000000000000, 20);
         Assert.equal(600000000000000000000000000000000000, pot, "should equal input");
-    }**/
+    }
 
     function testupdatemaskxaddr() public{
         uint256 gen = artx.updateMasksXAddr(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 10000000, 20);
@@ -122,6 +122,22 @@ contract TestContract {
         address[] memory winaddr; 
         winaddr = artx.getWinner();
         //Assert.equal(0, winaddr, "should equal input");
-    }  
+    }
+
+    function testupdateGenVaultXAddr() public{
+        uint test = artx.updateGenVaultXAddr(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE);
+        Assert.equal(3000000, test, "should equal input");
+    }**/
+
+    /**function testupdateGenVaultXAddr() public{
+        uint test = artx.updateGenVaultXAddr(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE);
+        Assert.equal(3000000, test, "should equal input");
+    }**/
+
+    function testwithdrawEarningsXAddr() public{
+        uint test = artx.withdrawEarningsXAddr(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE);
+        Assert.equal(3000000, test, "should equal input");
+    }
+
 
 }

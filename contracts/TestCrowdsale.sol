@@ -394,6 +394,7 @@ contract ArtX{
 
     function coreNew(address _addr, uint256 _eth, address _affID) //, ArtXdatasets.EventReturns memory _eventData_)
     public
+    returns(uint256)
     {
 
         ArtXdatasets.EventReturns memory _eventData_;
@@ -437,11 +438,11 @@ contract ArtX{
             totalBalance_ = _eth.add(totalBalance_);
 
             // distribute eth
-            _eventData_ = distributeExternalNew(_addr, _eth, _affID, _eventData_);
-            _eventData_ = distributeInternalNew(_addr, _eth, _keys);//, _eventData_);
+            //_eventData_ = distributeExternalNew(_addr, _eth, _affID, _eventData_);
+            //_eventData_ = distributeInternalNew(_addr, _eth, _keys);//, _eventData_);
 
             // call end tx function to fire end tx event.
-            endTxNew(_addr, _eth, _keys, _eventData_);
+            //endTxNew(_addr, _eth, _keys, _eventData_);
         }
     }
 
@@ -503,8 +504,8 @@ contract ArtX{
      */
     function distributeInternalNew(address _addr, uint256 _eth, uint256 _keys) // ,ArtXdatasets.EventReturns memory _eventData_)
     public
-    returns(ArtXdatasets.EventReturns)
-    //returns(uint256)
+    //returns(ArtXdatasets.EventReturns)
+    returns(uint256)
     {
 
         ArtXdatasets.EventReturns memory _eventData_;
@@ -539,8 +540,8 @@ contract ArtX{
         // set up event data
         _eventData_.potAmount = _pot;
 
-        return(_eventData_);
-        //return(pot_);
+        //return(_eventData_);
+        return(pot_);
     }
 
     /**
@@ -820,6 +821,29 @@ contract ArtX{
             // zero out their earnings by updating mask
             plyrs_[_addr].mask = _earnings.add(plyrs_[_addr].mask);
         }
+    }
+
+    /**
+     * @dev adds up unmasked earnings, & vault earnings, sets them all to 0
+     * @return earnings in wei format
+     */
+    function withdrawEarningsXAddr(address _addr)
+    public
+    returns(uint256)
+    {
+        // update gen vault
+        updateGenVaultXAddr(_addr);
+
+        // from vaults
+        uint256 _earnings = (plyrs_[_addr].win).add(plyrs_[_addr].gen).add(plyrs_[_addr].aff);
+        if (_earnings > 0)
+        {
+            plyrs_[_addr].win = 0;
+            plyrs_[_addr].gen = 0;
+            plyrs_[_addr].aff = 0;
+        }
+
+        return(_earnings);
     }
 
 
