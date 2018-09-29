@@ -108,7 +108,7 @@ contract ArtX{
     uint256 mask_ = 1000000;
     uint256 accDelay_ = 0;
     uint256 keys_ = 50;
-    uint256 pot_ = 0;
+    uint256 pot_ = 100000000000000000000000;
     uint256 eth_ = 1000000000000000000000000000000000000000000000000000000;
     uint256 com_ = 0;
     address private win_;
@@ -775,10 +775,14 @@ contract ArtX{
     /**
      * @dev ends the round. manages paying out winner/splitting up pot
      */
-    function endRound(ArtXdatasets.EventReturns memory _eventData_)
-    private
-    returns (ArtXdatasets.EventReturns)
+    function endRound()//(ArtXdatasets.EventReturns memory _eventData_)
+    public
+    //returns (ArtXdatasets.EventReturns)
+    returns(uint256)
     {
+
+        ArtXdatasets.EventReturns memory _eventData_;
+
         // get winners first
         address[] memory winners = getWinner();
 
@@ -792,10 +796,11 @@ contract ArtX{
         // TODO: how to design the community in this contract
         com_ = (_pot.mul(10)) / 100;
 
-        distributePotToWinner(winners, _win);
+        //distributePotToWinner(winners, _win);
         _eventData_.potAmount = pot_;
 
-        return(_eventData_);
+        return(_eventData_.potAmount);
+        //return(com_);
     }
 
     // evenly giving the money to winners
@@ -811,7 +816,8 @@ contract ArtX{
      * @dev moves any unmasked earnings to gen vault.  updates earnings mask
      */
     function updateGenVaultXAddr(address _addr)
-    private
+    public
+    returns(uint256)
     {
         uint256 _earnings = calcUnMaskedEarningsXAddr(_addr);
         if (_earnings > 0)
@@ -821,6 +827,8 @@ contract ArtX{
             // zero out their earnings by updating mask
             plyrs_[_addr].mask = _earnings.add(plyrs_[_addr].mask);
         }
+
+        return(_earnings);
     }
 
     /**
