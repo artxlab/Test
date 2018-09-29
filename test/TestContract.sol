@@ -99,20 +99,19 @@ contract TestContract {
     function testiWantXKeys() public{
         uint256 iWantXKeysNew = artx.iWantXKeysNew(10000000000000000000);
         Assert.equal(750007031250000, iWantXKeysNew, "should equal input");
-    }
+    }**/
 
     function testcoreNew() public{
         uint available_limit = artx.coreNew(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 100000000000, 0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3);
         Assert.equal(0, available_limit, "should equal input");
-    }**/   
+    }   
 
     /************************************ Test Portion 2 ***********************************************/
 
-
-    function testdistinternal() public{
+    /**function testdistinternal() public{
         uint256 pot = artx.distributeInternalNew(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 1000000000000000000, 20);
         Assert.equal(600000000000000000000000000000000000, pot, "should equal input");
-    }
+    }**/
 
     function testupdatemaskxaddr() public{
         uint256 gen = artx.updateMasksXAddr(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 10000000, 20);

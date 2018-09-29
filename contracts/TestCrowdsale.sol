@@ -394,10 +394,10 @@ contract ArtX{
 
     function coreNew(address _addr, uint256 _eth, address _affID) //, ArtXdatasets.EventReturns memory _eventData_)
     public
-    returns(uint256)
     {
 
         ArtXdatasets.EventReturns memory _eventData_;
+
         // early round eth limiter)
 
         if (eth_ < 100000000000000000000 && plyrs_[_addr].eth.add(_eth) > 1000000000000000000){   
@@ -437,30 +437,30 @@ contract ArtX{
             totalBalance_ = _eth.add(totalBalance_);
 
             // distribute eth
-            //_eventData_ = distributeExternalNew(_addr, _eth, _affID, _eventData_);
-            //_eventData_ = distributeInternalNew(_addr, _eth, _keys, _eventData_);
+            _eventData_ = distributeExternalNew(_addr, _eth, _affID, _eventData_);
+            _eventData_ = distributeInternalNew(_addr, _eth, _keys);//, _eventData_);
 
             // call end tx function to fire end tx event.
-            //endTxNew(_addr, _eth, _keys, _eventData_);
+            endTxNew(_addr, _eth, _keys, _eventData_);
         }
     }
 
     /**
      * @dev prepares compression data and fires event for buy or reload tx's
      */
-    //function endTxNew(address _addr, uint256 _eth, uint256 _keys, ArtXdatasets.EventReturns memory _eventData_)
-    //public
-    //{
+    function endTxNew(address _addr, uint256 _eth, uint256 _keys, ArtXdatasets.EventReturns memory _eventData_)
+    public
+    {
 
-    //    emit Devents.onEndTx
-    //    (
-    //        plyrs_[_addr].name,
-    //        msg.sender,
-    //        _eth,
-    //        _keys,
-    //        _eventData_.potAmount
-    //    );
-    //}
+        //emit Devents.onEndTx
+        //(
+        //    plyrs_[_addr].name,
+        //    msg.sender,
+        //    _eth,
+        //    _keys,
+        //    _eventData_.potAmount
+        //);
+    }
 
 
     /**
@@ -503,8 +503,8 @@ contract ArtX{
      */
     function distributeInternalNew(address _addr, uint256 _eth, uint256 _keys) // ,ArtXdatasets.EventReturns memory _eventData_)
     public
-    //returns(ArtXdatasets.EventReturns)
-    returns(uint256)
+    returns(ArtXdatasets.EventReturns)
+    //returns(uint256)
     {
 
         ArtXdatasets.EventReturns memory _eventData_;
@@ -537,10 +537,10 @@ contract ArtX{
         pot_ = _pot.add(_dust.add(pot_));
 
         // set up event data
-        //_eventData_.potAmount = _pot;
+        _eventData_.potAmount = _pot;
 
-        //return(_eventData_);
-        return(pot_);
+        return(_eventData_);
+        //return(pot_);
     }
 
     /**
@@ -769,6 +769,57 @@ contract ArtX{
             return ( (keys_.add(_keys)).ethRec(_keys) );
         else // rounds over.  need price for new round
             return ( (_keys).eth() );
+    }
+
+    /**
+     * @dev ends the round. manages paying out winner/splitting up pot
+     */
+    function endRound(ArtXdatasets.EventReturns memory _eventData_)
+    private
+    returns (ArtXdatasets.EventReturns)
+    {
+        // get winners first
+        address[] memory winners = getWinner();
+
+        // grab our pot amount
+        uint256 _pot = pot_;
+
+        // calculate our winner share, community rewards, gen share,
+        // p3d share, and amount reserved for next pot
+        uint256 _win = (_pot.mul(90)) / 100;
+
+        // TODO: how to design the community in this contract
+        com_ = (_pot.mul(10)) / 100;
+
+        distributePotToWinner(winners, _win);
+        _eventData_.potAmount = pot_;
+
+        return(_eventData_);
+    }
+
+    // evenly giving the money to winners
+    function distributePotToWinner(address[] _winners, uint256 _eth) public{
+        uint256 _amount = _eth / _winners.length;
+        for(uint256 i = 0; i < _winners.length; i++){
+            winner_[_winners[i]] = true;
+            plyrs_[_winners[i]].win += _amount;
+        }
+    }
+
+    /**
+     * @dev moves any unmasked earnings to gen vault.  updates earnings mask
+     */
+    function updateGenVaultXAddr(address _addr)
+    private
+    {
+        uint256 _earnings = calcUnMaskedEarningsXAddr(_addr);
+        if (_earnings > 0)
+        {
+            // put in gen vault
+            plyrs_[_addr].gen = _earnings.add(plyrs_[_addr].gen);
+            // zero out their earnings by updating mask
+            plyrs_[_addr].mask = _earnings.add(plyrs_[_addr].mask);
+        }
     }
 
 
