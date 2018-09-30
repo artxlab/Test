@@ -649,7 +649,10 @@ modifier isWithinLimits(uint256 _eth) {
     public
     view
     returns(uint256)
-    {
+    {   
+
+        totalBalance_ = 10000000;
+
         // grab time
         uint256 _now = now;
 

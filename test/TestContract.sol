@@ -89,7 +89,7 @@ contract TestContract {
     function testcalcUnMaskedEarningsXAddr() public{
           uint256 testmaskearning = artx.calcUnMaskedEarningsXAddr(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE);
           Assert.equal(3000000, testmaskearning, "should equal input");
-    }**/
+    }
 
     function testcalculateEndEth() public{
           uint256 testcalculateEndEth = artx.calculateEndEth(3000);
@@ -101,14 +101,14 @@ contract TestContract {
         Assert.equal(750007031250000, iWantXKeysNew, "should equal input");
     }
 
-    /**function testcoreNew() public{
+    function testcoreNew() public{
         uint available_limit = artx.coreNew(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 100000000000, 0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3);
         Assert.equal(0, available_limit, "should equal input");
     }**/ 
 
     /************************************ Test Portion 2 ***********************************************/
 
-    /**function testdistinternal() public{
+    function testdistinternal() public{
         uint256 pot = artx.distributeInternalNew(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 1000000000000000000, 20);
         Assert.equal(600000000000100000000000000000000000, pot, "should equal input");
     }
@@ -138,9 +138,9 @@ contract TestContract {
         uint test = artx.endRound();
         //artx.ArtXdatasets.EventReturns memory _event_ = artx.endRound();
         Assert.equal(100000000000000000000000, test, "should equal input");
-    } **/
+    }
 
-    function testupdaterefermap() public{
+    /**function testupdaterefermap() public{
         address testaddr = artx.updaterefermap("abcdefg", 0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3);
         Assert.equal(0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3, testaddr , "should equal input");
     }
@@ -151,10 +151,13 @@ contract TestContract {
         Assert.equal(0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3, addrtest, "should equal input");
         //address addrtest = artx.registerIDFromDapp("Clement", "abcdefg", "zywx");
         //Assert.equal(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, addrtest, "should equal input");
+    }**/
+
+    /************************************ Test Portion 3 ***********************************************/
+
+    function testcalcKeysReceivedNew() public{
+        uint256 keys = artx.calcKeysReceivedNew(1000000000000000000);
+        Assert.equal(13153133573264508115713, keys, "should equal input");
     }
-
-    /**************************** Test Part 3 ****************************************/
-
-
 
 }
