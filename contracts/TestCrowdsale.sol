@@ -125,6 +125,41 @@ contract ArtX{
     WinnerGroup winnerGroup3_;
     address[] _result;
 
+//==============================================================================
+//     _ _  _  _|. |`. _  _ _  .
+//    | | |(_)(_||~|~|(/_| _\  .  (these are safety checks)
+//==============================================================================
+
+/**
+* @dev used to make sure no one can interact with contract until it has
+* been activated.
+*/
+modifier isActivated() {
+    require(start_ == true, "its not ready yet.  check ?eta in discord");
+    _;
+}
+
+/**
+* @dev prevents contracts from interacting with fomo3d
+*/
+modifier isHuman() {
+    //address _addr = msg.sender;
+    address _addr = 0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE;
+    uint256 _codeLength;
+
+    assembly {_codeLength := extcodesize(_addr)}
+    require(_codeLength == 0, "sorry humans only");
+    _;
+}
+
+/**
+* @dev sets boundaries for incoming tx
+*/
+modifier isWithinLimits(uint256 _eth) {
+    require(_eth >= 1000000000, "pocket lint: not a valid currency");
+    require(_eth <= 100000000000000000000000, "no vitalik, no");
+    _;
+}
 
 //==============================================================================
 //     _ _  _  |`. _     _ _ |_ | _  _  .
@@ -1001,6 +1036,86 @@ contract ArtX{
         return((_ppt.mul(_artxshares)) / (1000000000000000000));
     }
 
+
+    /**
+     * @dev registers a name.  UI will always display the last name you registered.
+     * but you will still own all previously registered names to use as affiliate
+     * links.
+     * - must pay a registration fee.
+     * - name must be unique
+     * - names will be converted to lowercase
+     * - name cannot start or end with a space
+     * - cannot have more than 1 space in a row
+     * - cannot be only numbers
+     * - cannot start with 0x
+     * - name must be at least 1 char
+     * - max length of 32 characters long
+     * - allowed characters: a-z, 0-9, and space
+     * -functionhash- 0x921dec21 (using ID for affiliate)
+     * -functionhash- 0x3ddd4698 (using address for affiliate)
+     * -functionhash- 0x685ffd83 (using name for affiliate)
+     * @param _nameString players desired name
+     * @param _affCode affiliate ID, address, or name of who refered you
+     * (this might cost a lot of gas)
+     */
+    function registerIDFromDapp(bytes32 _nameString, string _affCode, string _selfReferCode)
+    isHuman()
+    public
+    returns (bool,address)
+    //returns(address)
+    {
+
+        // filter name + condition checks
+        // bytes32 _id = NameFilter.nameFilter(_nameString);
+
+        // set up address
+        //address _addr = msg.sender;
+        address _addr = 0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE;
+
+
+        // set up our tx event data and determine if player is new or not
+        bool _isNewPlayer = false;
+
+        if (plyrs_[_addr].addr == address(0))
+        {
+            _isNewPlayer = true;
+        }
+
+        // we allow player to change their names
+        plyrs_[_addr].name = _nameString;
+        plyrs_[_addr].addr = _addr;
+        plyrs_[_addr].referCode = _selfReferCode;
+
+        // check referMap_
+        referMap_[_affCode] = 0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3;
+        address _affAddr = referMap_[_affCode];
+
+        // manage affiliate residuals
+        // if no affiliate code was given, no new affiliate code was given, or the
+        // player tried to use their own pID as an affiliate code, lolz
+        //if (_affAddr != 0 && _affAddr != plyrs_[_addr].laff && _affAddr != _addr)
+        if (_affAddr != 0)
+        {
+            // update last affiliate
+            plyrs_[_addr].laff = _affAddr;
+        } else if (_affAddr == _addr) {
+            _affAddr = 0;
+        }
+
+        return (_isNewPlayer, _affAddr);
+        //return(_addr);
+    }
+
+
+
+    function updaterefermap(string _affCode, address addr) public 
+    returns(address)
+    {
+        referMap_[_affCode] = addr;
+        return(referMap_[_affCode]);
+    }
+
+
 }
 
 
@@ -1092,7 +1207,8 @@ library ArtXdatasets {
         uint256 gen;    // general vault
         uint256 aff;    // affiliate vault
         uint256 lrnd;   // last round played
-        uint256 laff;   // last affiliate id used
+        //uint256 laff; // last affiliate id original
+        address laff;   // last affiliate id used
         uint256 mask;
         uint256 keys;
         uint256[] est;

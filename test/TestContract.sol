@@ -108,7 +108,7 @@ contract TestContract {
 
     /************************************ Test Portion 2 ***********************************************/
 
-    function testdistinternal() public{
+    /**function testdistinternal() public{
         uint256 pot = artx.distributeInternalNew(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 1000000000000000000, 20);
         Assert.equal(600000000000100000000000000000000000, pot, "should equal input");
     }
@@ -119,7 +119,7 @@ contract TestContract {
     }    
 
     function testgetWinner() public{
-        address[] memory winaddr; 
+        address[] memory winaddr;
         winaddr = artx.getWinner();
         //Assert.equal(0, winaddr, "should equal input");
     }
@@ -138,7 +138,23 @@ contract TestContract {
         uint test = artx.endRound();
         //artx.ArtXdatasets.EventReturns memory _event_ = artx.endRound();
         Assert.equal(100000000000000000000000, test, "should equal input");
+    } **/
+
+    function testupdaterefermap() public{
+        address testaddr = artx.updaterefermap("abcdefg", 0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3);
+        Assert.equal(0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3, testaddr , "should equal input");
     }
+
+    function testregisterIDFromDapp() public{
+        var(test, addrtest) = artx.registerIDFromDapp("Clement", "abcdefg", "zywx");
+        Assert.equal(true, test, "should equal input");
+        Assert.equal(0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3, addrtest, "should equal input");
+        //address addrtest = artx.registerIDFromDapp("Clement", "abcdefg", "zywx");
+        //Assert.equal(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, addrtest, "should equal input");
+    }
+
+    /**************************** Test Part 3 ****************************************/
+
 
 
 }
