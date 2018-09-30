@@ -108,7 +108,7 @@ contract TestContract {
 
     /************************************ Test Portion 2 ***********************************************/
 
-    function testdistinternal() public{
+    /**function testdistinternal() public{
         uint256 pot = artx.distributeInternalNew(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 1000000000000000000, 20);
         Assert.equal(600000000000100000000000000000000000, pot, "should equal input");
     }
@@ -117,12 +117,6 @@ contract TestContract {
         uint256 gen = artx.updateMasksXAddr(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE, 10000000, 20);
         Assert.equal(0, gen, "should equal input");
     }    
-
-    function testgetWinner() public{
-        address[] memory winaddr;
-        winaddr = artx.getWinner();
-        //Assert.equal(0, winaddr, "should equal input");
-    }
 
     function testupdateGenVaultXAddr() public{
         uint test = artx.updateGenVaultXAddr(0x24c3db3D9f24C30f0B17faa9b3586ad6C1FBA0aE);
@@ -140,7 +134,7 @@ contract TestContract {
         Assert.equal(100000000000000000000000, test, "should equal input");
     }
 
-    /**function testupdaterefermap() public{
+    function testupdaterefermap() public{
         address testaddr = artx.updaterefermap("abcdefg", 0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3);
         Assert.equal(0xCf11cdB8c8c85403bcf2375688754f85bF618Ff3, testaddr , "should equal input");
     }
@@ -159,5 +153,17 @@ contract TestContract {
         uint256 keys = artx.calcKeysReceivedNew(1000000000000000000);
         Assert.equal(13153133573264508115713, keys, "should equal input");
     }
+
+    function testselectAddress() public{
+        address[] memory addr = artx.selectAddress();
+        //Assert.equal(0, addr, "should equal input");
+    }
+
+    function testgetWinner() public{
+        address[] memory winaddr;
+        winaddr = artx.getWinner();
+        //Assert.equal(0, winaddr, "should equal input");
+    }
+
 
 }

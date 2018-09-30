@@ -780,10 +780,77 @@ modifier isWithinLimits(uint256 _eth) {
             }
         }
 
-        //return (selectAddress());
-        return(winnerGroup1_.addr);
+        return (selectAddress());
+        //return(winnerGroup1_.addr);
     }
 
+
+    // select all address from winner group
+    // there might be three winners
+    function selectAddress()
+    public
+    returns(address[])
+    {
+
+        if(winnerGroup3_.addr.length == 0) { // nobody played
+            return _result;
+        } else if(winnerGroup2_.addr.length == 0) { // G2 has nothing means only has one group winner, will happen in a scenario that only a price is in place and all players place this price
+
+            for(uint256 i = 0; i < winnerGroup3_.addr.length; i++) {
+
+                _result.push(winnerGroup3_.addr[i]);
+            }
+
+            return _result;
+
+        } else if(winnerGroup1_.addr.length == 0) {
+
+            for(i = 0; i < winnerGroup2_.addr.length; i++) {
+
+                _result.push(winnerGroup2_.addr[i]);
+            }
+
+            if(_result.length > 3) {
+                return _result;
+            }
+
+            for(i = 0; i < winnerGroup3_.addr.length; i++) {
+
+                _result.push(winnerGroup3_.addr[i]);
+            }
+
+            return _result;
+        }
+
+
+        for(i = 0; i < winnerGroup1_.addr.length; i++) {
+
+            _result.push(winnerGroup1_.addr[i]);
+        }
+
+        // After pushing winner group1, if there are more than 3 candidates already, quit
+        if(_result.length > 3) {
+            return _result;
+        }
+
+        for(i = 0; i < winnerGroup2_.addr.length; i++) {
+
+            _result.push(winnerGroup2_.addr[i]);
+        }
+
+        // DITTO
+        if(_result.length > 3) {
+            return _result;
+        }
+
+        for(i = 0; i < winnerGroup3_.addr.length; i++) {
+
+            _result.push(winnerGroup3_.addr[i]);
+        }
+
+
+        return _result;
+    }
 
     /**
      * @dev returns current eth price for X keys.
